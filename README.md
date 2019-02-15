@@ -94,19 +94,123 @@ Some summaries of iOS knowledge points
 
 ## 10、NSCache & NSDcitionary
 
-## 11、 UIView的setNeedsDisplay和setNeedsLayout方法
+## UIView的setNeedsDisplay和setNeedsLayout方法
 
-## 12、UILayer & UIView
+|                  | setNeedsDisplay | setNeedsLayout                                               |
+| ---------------- | --------------- | ------------------------------------------------------------ |
+| 同步/异步        | 异步            | 异步                                                         |
+| 实际会调用的方法 | drawRect        | layoutSubviews                                               |
+| 作用             | 绘制界面        | （非自动布局的情况下）调整子控件的布局，此时的控件frame确定了 |
 
-## 13、layoutSubViews & drawRects
+为什么它们都是异步方法？
 
-## 14、UDID & UUID
+在整个UI界面下有一个RunLoop事件循环机制，代码的每次操作都基于事件循环。当我们调用setNeedsDisplay或setNeedsLayout时，内部实现仅仅是给某个标志位置1并立即返回，在下一次UI更新轮询的时候就会去调用drawRect或layoutSubviews方法更新UI并将标志位置0，所以在本次事件循环中不会立即调用。
 
-## 15、CPU & GPU
+layoutSubviews的触发时机
+
+- 手动调用setNeedsLayout
+
+- addSubview
+- view.frame = value
+- 滚动一个UIScrollView
+- 旋转Screen
+- 改变一个UIView大小
+
+drawRect的触发时机
+
+- 手动调用setNeedsDisplay
+
+- 在调用sizeToFit后被调用
+- 通过设置contentMode属性值为UIViewContentModeRedraw。那么将在每次设置或更改frame的时候自动调用drawRect
+
+**注意：**layoutSubviews和drawRect不会被自身调用，调用源头是Controller，即init一个View后不会触发上面的方法
+
+> refer: https://www.jianshu.com/p/33a28bb14749
+
+## layoutSubViews & drawRects
+
+参考上面
+
+## CALayer & UIView
+
+CALayer和UIView的设计遵从了面向对象单一职责原则：**CALayer负责显示内容的绘制，UIView则是管理。**
+
+在每一个UIView实例当中，都有一个默认的支持图层layer，UIView负责创建并且管理这个图层。实际上 UIView之所以能够显示,就是因为它里面有这个一个层,才具有显示的功能 ，UIView仅仅是对它的一层封装，实现了CALayer的delegate，提供了处理事件交互的具体功能，还有动画底层方法的高级API。可以说CALayer是UIView的内部实现细节。
+
+区别：
+
+- 首先UIView可以响应事件，而CALayer不可以
+
+- 一个 Layer 的 frame 是由它的 anchorPoint、position、bounds和 transform 共同决定的，而一个 View 的 frame 只是简单的返回 Layer的 frame
+
+- UIView主要是对显示内容的管理而 CALayer 主要侧重显示内容的绘制
+
+- 在做 iOS 动画的时候，修改非 RootLayer的属性（譬如位置、背景色等）会默认产生隐式动画，而修改UIView则不会。
+
+> refer: https://juejin.im/post/5ad9992d6fb9a07abb232745
+
+## UDID & UUID
+
+UDID是Unique Device Identifier的缩写，中文意思是设备唯一标识。
+
+iOS后用`UIDevice.current.identifierForVendor`来获取，它对同一个app供应商是相同的。但这个有坑，app被删后就会重新生成。
+
+UUID是Universally Unique Identifier的缩写，中文意思是通用唯一识别码。`UUID()`就可以生成一个不同的UUID。
+
+Tips：利用Keychain保存UDID或者UUID来保证唯一性。（从用户角度上，不推荐此作法）
+
+> refers:
+>
+>  https://www.jianshu.com/p/1011c872458d
+>
+>  https://developer.apple.com/documentation/uikit/uidevice/1620059-identifierforvendor
+
+## CPU & GPU
+
+CPU和GPU之所以大不相同，是由于其设计目标的不同，它们分别针对了两种不同的应用场景。CPU需要很强的通用性来处理各种不同的数据类型，同时又要逻辑判断又会引入大量的分支跳转和中断的处理。这些都使得CPU的内部结构异常复杂。而GPU面对的则是类型高度统一的、相互无依赖的大规模数据和不需要被打断的纯净的计算环境。
+
+GPU采用了数量众多的计算单元和超长的流水线，但只有非常简单的控制逻辑并省去了Cache。而CPU不仅被Cache占据了大量空间，而且还有有复杂的控制逻辑和诸多优化电路，相比之下计算能力只是CPU很小的一部分。
+
+CPU 基于低延时的设计；GPU是基于大的吞吐量设计。
+
+**什么类型的程序适合在GPU上运行？**
+
+　　（1）计算密集型的程序。所谓计算密集型(Compute-intensive)的程序，就是其大部分运行时间花在了寄存器运算上，寄存器的速度和处理器的速度相当，从寄存器读写数据几乎没有延时。可以做一下对比，读内存的延迟大概是几百个时钟周期；读硬盘的速度就不说了，即便是SSD, 也实在是太慢了。
+
+　　（2）易于并行的程序。GPU其实是一种SIMD(Single Instruction Multiple Data)架构， 他有成百上千个核，每一个核在同一时间最好能做同样的事情。
+
+> refer: https://www.zhihu.com/question/19903344/answer/96081382
+>
+> 原文截取自知乎，详细内容请参考上面的链接
 
 ## 16、点（pt）& 像素（px）
 
-## 17、属性与成员变量
+## 属性与成员变量
+
+成员变量：属于类的内存布局的一部分，在new对象的时候会被创建。
+
+属性：用语法糖包装了一个方法调用，对某一个成员变量的访问，或者成员变量的成员变量或属性的访问。
+
+```objective-c
+@interface Label: NSObject {
+    @private int _cnt; // 纯粹的成员变量
+}
+@property(nonatomic, copy) NSString *content; // 编译器会帮助生成一个名叫_content的NSString变量
+@property(nonatomic) int cnt; // 自己实现了cnt的get-set方法后，编译器就不会自动生成变量了。
+@end
+    
+@implementation Label
+- (int)cnt {
+    return _cnt;
+}
+
+- (void)setCnt:(int)val {
+    _cnt = val;
+}
+@end
+```
+
+
 
 ## 18、int和NSInteger的区别
 
@@ -126,7 +230,13 @@ Some summaries of iOS knowledge points
 
 （4）分类的局限性
 
-## 20、category & extension
+## category & extension
+
+[C]：category为类添加新的方法，甚至属性（关联对象），category可以有多个，每个category都可以遵从一个新的协议；extension又被称作匿名分类，一个类只允许有一个extension，extension中可以添加成员变量、属性、方法等，起到数据和接口隐藏的作用。
+
+Swift中category称作extension，extension的作用和[C]的category功能一致，且没有匿名分类。
+
+**注意：**分类中如果写了已经存在的方法，就会涉及到一个方法覆盖的问题。这个行为是不确定的，具体请参考runtime的消息转发。
 
 ## 21、Foundation
 
@@ -154,9 +264,11 @@ Some summaries of iOS knowledge points
 
 ## 26、什么是沙盒模型？哪些操作是属于私有api范畴?
 
-## 27、在一个对象的方法里面：self.name= “object”；和 name =”object” 有什么不同吗?
+## 在一个对象的方法里面：self.name= “object”；和 name =”object” 有什么不同吗?
 
-## 28、请简要说明viewDidLoad和viewDidUnload何时调用
+点(.)调用的是属性，也就是方法，可以触发KVO。
+
+name = "object"，实际上是直接访问成员变量，即self->name = "object"。
 
 ## 29、创建控制器、视图的方式
 
@@ -200,11 +312,44 @@ Some summaries of iOS knowledge points
 
 ## 45、ViewController的didReceiveMemoryWarning怎么被调用
 
-## 46、什么时候用delegate,什么时候用Notification?
+## 什么时候用delegate,什么时候用Notification?
 
-## 47、用预处理指令#define声明一个常数，用以表明1年中有多少秒（忽略闰年问题）
+**delegate**针对**one**-**to-one**关系，并且**reciever**可以返回值给**sender**。
 
-## 48、写一个”标准"宏MIN ，这个宏输入两个参数并返回较小的一个。
+**notification**可以针对**one**-**to**-**one**/**many**/**none**，**reciever**无法返回值给**sender**。
+
+所以**，delegate**用于**sender**希望接受到**reciever**的某个功能反馈值**，notification**用于通知多个**object**某个事件。
+
+> refer: http://www.voidcn.com/article/p-kvhkgpmh-py.html
+
+Thinking：
+
+- delegate需要注意什么？
+- 注册了通知需要删除通知吗，如果需要什么时机删除合适？
+
+还有一个使用场景。页面层级跨越很大，此时不适合delegate一层一层传递，用通知会很好地解耦。
+
+## 用预处理指令#define声明一个常数，用以表明1年中有多少秒（忽略闰年问题）
+
+```objective-c
+#ifndef ONE_YEAR_SECONDS // 防止重复声明
+#define	ONE_YEAR_SECONDS (365 * 24 * 60 * 60) // 表达式需要加上括号，这是陷阱
+// 或者
+#define ONE_YEAR_SECONDS 31536000 // 直接算出来，常数不用加括号
+#endif
+```
+
+
+
+## 写一个”标准"宏MIN ，这个宏输入两个参数并返回较小的一个
+
+```objective-c
+#ifndef MIN
+#define MIN(a, b) ((a) > (b) ? (b) : (a)) // 老生常谈，括号，括号
+#endif
+```
+
+
 
 ## 49、关键字const有什么含意？修饰类呢?static的作用,用于类呢?还有extern c的作用
 
