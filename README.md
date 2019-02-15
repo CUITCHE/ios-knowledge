@@ -36,11 +36,11 @@ Some summaries of iOS knowledge points
 
     extension Animal {
         func walk() {
-            // some code...
+            // 默认实现
         }
 
         func anotherFunction() {
-            // ...
+            // 添加新的方法
         }
     }
     ```
@@ -55,7 +55,7 @@ Some summaries of iOS knowledge points
 
 - 结构体、类
 
-  - [C]	**结构体**就是C语言的东西，属于值类型，由编译器管理生命周期。由于结构体没有析构函数（C++中的结构体如果包含方法就会升级为C++类），所以结构体不能含有[C]对象，因为编译器不知道在什么地方release对象才好。
+  - [C]	**结构体**就是C语言的东西，属于值类型，由编译器管理生命周期。~~由于结构体没有析构函数（C++中的结构体如果包含方法就会升级为C++类），所以结构体不能含有[C]对象，因为编译器不知道在什么地方release对象才好。~~<sup><a href="arc-forbids-objective-c-objects-in-struct">[1]</a></sup>
 
     ​	**类**是包含了一个runtime的C的结构体，属于指针类型，采用引用计数管理生命周期。
 
@@ -71,6 +71,10 @@ Some summaries of iOS knowledge points
     let a = 1.23 // Double类型
     let b: Int = a // ❌ 无法直接从Double转换成Int，需要通过构造函数 Int(a)才行
     ```
+
+> <a name="arc-forbids-objective-c-objects-in-struct">[1] 在Apple LLVM version 10.0.0 (clang-1000.11.45.5)中，C结构体可以包含ARC对象</a>
+>
+> 另见StackOverflow上的讨论：https://stackoverflow.com/questions/28471855/does-objective-c-forbid-use-of-structs
 
 ## 2、编译链接
 
@@ -351,7 +355,63 @@ Thinking：
 
 
 
-## 49、关键字const有什么含意？修饰类呢?static的作用,用于类呢?还有extern c的作用
+## 关键字const有什么含意？修饰类呢?static的作用,用于类呢?还有extern c的作用
+
+> 有些问的貌似是关于C++的，有的不明所以，这里我就以C++的视角解读一下吧。
+
+### const
+
+const常量修饰关键字，例如：`const int val = 1;`声明一个int的常量。在语义层面上，后续是不可对val进行修改的，否则会被编译器报错。在编译器层面上，会对const修饰的变量优化，即常量传递，在使用val的地方会直接使用数字1，而不是从寄存器中读取val的值。
+
+```c++
+#include <iostream>
+using namespace  std;
+void main()
+{
+    const int nConst = 5;
+
+    int * pConst = (int*)&nConst;
+    *pConst = 6;
+
+    int nVar = nConst;
+    cout << "nConst: " << nConst << "  nVar: " << nVar << endl;
+}
+// 输出：nConst: 5  nVar: 5
+// 这段代码，C也是一样
+```
+
+区别`const int *obj`和`int *const obj;`
+
+前者obj指向的内容不可更改；后者obj存储的地址不可再改变，指向的内容可以改变。例如：
+
+```objective-c
+const int *obj = p;
+*obj = 45; // ❌
+
+NSString *const obj2 = @"123";
+obj2 = @"1"; // ❌
+```
+
+所以，我们经常把这两个结合起来定义[C]对象的常量：`const NSString *const ulr = @"a url"`
+
+在C++中，const还可以被用于成员方法中，表示这个方法中的不会对类的成员变量进行修改。
+
+### static
+
+1. 被static修饰的变量会存储在静态存储区，在程序初始化的时候就会被初始化为对应类型的**零值**。如果是在方法内部的的static变量，只有在第一次执行这个方法的时候才会被初始化，比如创建单例的时候使用:
+
+   ```objective-c
+   void singleton() {
+       static dispatch_once_t onceToken;
+       dispatch_once(&onceToken, ^{
+           <#code to be executed once#>
+       });
+   }
+   ```
+
+2. static全局变量，编译器为每一个编译单元生成带有编译单元前缀的符号信息，以保证不同的编译单元不共享同一个static变量。如果某一个头文件含有一个static变量，那么在不同的.m、.mm、.c、.cpp文件中若包含了此头文件，每一个static变量都会是独立的。<sup><a href="static的作用">[1]</a></sup>
+
+> <a name="static的作用">[1]</a> [static的作用](https://www.cnblogs.com/dc10101/archive/2007/08/22/865556.html)
 
 ## 50、关键字volatile有什么含意?并给出三个不同的例子
 
