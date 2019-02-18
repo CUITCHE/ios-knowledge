@@ -55,7 +55,7 @@ Some summaries of iOS knowledge points
 
 - 结构体、类
 
-  - [C]	**结构体**就是C语言的东西，属于值类型，由编译器管理生命周期。~~由于结构体没有析构函数（C++中的结构体如果包含方法就会升级为C++类），所以结构体不能含有[C]对象，因为编译器不知道在什么地方release对象才好。~~<sup><a href="arc-forbids-objective-c-objects-in-struct">[1]</a></sup>
+  - [C]	**结构体**就是C语言的东西，属于值类型，由编译器管理生命周期。~~由于结构体没有析构函数（C++中的结构体如果包含方法就会升级为C++类），所以结构体不能含有[C]对象，因为编译器不知道在什么地方release对象才好。~~<sup><a href="#arc-forbids-objective-c-objects-in-struct">[1]</a></sup>
 
     ​	**类**是包含了一个runtime的C的结构体，属于指针类型，采用引用计数管理生命周期。
 
@@ -116,7 +116,7 @@ layoutSubviews的触发时机
 
 - addSubview
 - view.frame = value
-- 滚动一个UIScrollView
+- 滚动一个UIScrollView （其实是触发了addSubview）
 - 旋转Screen
 - 改变一个UIView大小
 
@@ -139,7 +139,7 @@ drawRect的触发时机
 
 CALayer和UIView的设计遵从了面向对象单一职责原则：**CALayer负责显示内容的绘制，UIView则是管理。**
 
-在每一个UIView实例当中，都有一个默认的支持图层layer，UIView负责创建并且管理这个图层。实际上 UIView之所以能够显示,就是因为它里面有这个一个层,才具有显示的功能 ，UIView仅仅是对它的一层封装，实现了CALayer的delegate，提供了处理事件交互的具体功能，还有动画底层方法的高级API。可以说CALayer是UIView的内部实现细节。
+在每一个UIView实例当中，都有一个默认的支持图层layer，UIView负责创建并且管理这个图层。实际上 UIView之所以能够显示，就是因为它里面有这个一个层，才具有显示的功能 。UIView仅仅是对它的一层封装，实现了CALayer的delegate，提供了处理事件交互的具体功能，还有动画底层方法的高级API。可以说CALayer是UIView的内部实现细节。
 
 区别：
 
@@ -152,12 +152,14 @@ CALayer和UIView的设计遵从了面向对象单一职责原则：**CALayer负�
 - 在做 iOS 动画的时候，修改非 RootLayer的属性（譬如位置、背景色等）会默认产生隐式动画，而修改UIView则不会。
 
 > refer: https://juejin.im/post/5ad9992d6fb9a07abb232745
+>
+> 参考文章：[你给我解析清楚，都有了CALayer了，为什么还要UIView](http://www.cocoachina.com/ios/20150828/13257.html)
 
 ## UDID & UUID
 
 UDID是Unique Device Identifier的缩写，中文意思是设备唯一标识。
 
-iOS后用`UIDevice.current.identifierForVendor`来获取，它对同一个app供应商是相同的。但这个有坑，app被删后就会重新生成。
+iOS6后用`UIDevice.current.identifierForVendor`来获取，它对同一个app供应商是相同的。但这个有坑，app被删后就会重新生成。
 
 UUID是Universally Unique Identifier的缩写，中文意思是通用唯一识别码。`UUID()`就可以生成一个不同的UUID。
 
@@ -236,7 +238,7 @@ CPU 基于低延时的设计；GPU是基于大的吞吐量设计。
 
 ## category & extension
 
-[C]：category为类添加新的方法，甚至属性（关联对象），category可以有多个，每个category都可以遵从一个新的协议；extension又被称作匿名分类，一个类只允许有一个extension，extension中可以添加成员变量、属性、方法等，起到数据和接口隐藏的作用。
+[C]：category为类添加新的方法，甚至属性（关联对象）。category可以有多个，每个category都可以遵从新的协议；extension又被称作匿名分类，一个类只允许有一个extension，extension中可以添加成员变量、属性、方法等，起到数据和接口隐藏的作用。
 
 Swift中category称作extension，extension的作用和[C]的category功能一致，且没有匿名分类。
 
@@ -272,7 +274,7 @@ Swift中category称作extension，extension的作用和[C]的category功能一�
 
 点(.)调用的是属性，也就是方法，可以触发KVO。
 
-name = "object"，实际上是直接访问成员变量，即self->name = "object"。
+`name = "object"`实际上是直接访问成员变量，即`self->name = "object"`。
 
 ## 29、创建控制器、视图的方式
 
@@ -409,9 +411,19 @@ obj2 = @"1"; // ❌
    }
    ```
 
-2. static全局变量，编译器为每一个编译单元生成带有编译单元前缀的符号信息，以保证不同的编译单元不共享同一个static变量。如果某一个头文件含有一个static变量，那么在不同的.m、.mm、.c、.cpp文件中若包含了此头文件，每一个static变量都会是独立的。<sup><a href="static的作用">[1]</a></sup>
+2. static全局变量，编译器为每一个编译单元生成带有编译单元前缀的符号信息，以保证不同的编译单元不共享同一个static变量。如果某一个头文件含有一个static变量，那么在不同的.m、.mm、.c、.cpp文件中若包含了此头文件，每一个static变量都会是独立的。<sup><a href="#static的作用">[1]</a></sup>
 
 > <a name="static的作用">[1]</a> [static的作用](https://www.cnblogs.com/dc10101/archive/2007/08/22/865556.html)
+
+**extern "C"**
+
+`extern "C"`用于C/C++的混编，其作用是方法的签名会用C的签名格式。
+
+在C++头文件里，当需要提供对外接口时，若方法参数或返回值不包含C++的东西，一般建议使用`extern "C"`修饰方法，以便C调用。
+
+**注意：**`extern "C"`是C++的东西，需要用`#ifdef __cpluscplus`包起来。详情看下面的延展阅读
+
+> 延展阅读：[C和C++混合编译，extern"C"的用法](https://blog.csdn.net/monroed/article/details/54880944)
 
 ## 50、关键字volatile有什么含意?并给出三个不同的例子
 
@@ -435,7 +447,9 @@ obj2 = @"1"; // ❌
 
 ## 60、sprintf,strcpy,memcpy使用上有什么要注意的地方
 
-## 61、你了解svn,cvs等版本控制工具么？
+## 你了解svn,cvs等版本控制工具么？
+
+不了解svn/cvs，现在主流是git，这里只作git说明。
 
 ## 62、什么是push
 
