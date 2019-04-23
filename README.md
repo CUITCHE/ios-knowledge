@@ -116,7 +116,7 @@ layoutSubviews的触发时机
 
 - addSubview
 - view.frame = value
-- 滚动一个UIScrollView （其实是触发了addSubview）
+- 滚动一个UIScrollView
 - 旋转Screen
 - 改变一个UIView大小
 
@@ -455,7 +455,7 @@ obj2 = @"1"; // ❌
 
 ## 63、静态链接库
 
-## 64、OC三大特性
+## 64、OC三大特性(面向对象的三大特性？)
 
 （1）封装_点语法
 
@@ -489,9 +489,64 @@ obj2 = @"1"; // ❌
 
 ## 77、Object-C有私有方法吗？私有变量呢？
 
-## 78、说说响应链
+## 78、事件传递 & 响应者链
 
-## 79、时间传递 & 响应者链
+```objective-c
+NS_CLASS_AVAILABLE_IOS(2_0) @interface UIApplication : UIResponder
+
+NS_CLASS_AVAILABLE_IOS(2_0) @interface UIView : UIResponder <NSCoding, UIAppearance, UIAppearanceContainer, UIDynamicItem, UITraitEnvironment, UICoordinateSpace, UIFocusItem, CALayerDelegate>
+
+NS_CLASS_AVAILABLE_IOS(2_0) @interface UIViewController : UIResponder <NSCoding, UIAppearanceContainer, UITraitEnvironment, UIContentContainer, UIFocusEnvironment>
+
+@interface CALayer : NSObject <NSSecureCoding, CAMediaTiming>
+```
+
+我们可以看出UIApplication，UIView，UIViewController都是继承自UIResponder类，可以响应和处理事件。CALayer不是UIResponder的子类，无法处理事件。
+
+### 事件传递
+
+事件传递顺序：产生触摸事件 -> 添加到UIApplication事件队列 -> UIApplication调用keyWindow的hitTest方法，keyWindow又会调用它的subviews的hitTest方法，直至返回最合适的view。
+
+UIApplication -> UIWindow(keyWindow) -> 寻找处理事件最合适的view(递归方法：`- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event`)
+
+`- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event`方法的大致实现是：
+
+```objective-c
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+  	if (self.userInteractionEnabled == NO || self.hidden == YES || self.alpha <= 0.01) {
+      	return nil;
+    }
+    for (UIView *view in self.subviews) {
+      if([view pointInside:point withEvent:event]) {
+        UIView *hitTestView = [view hitTest:point withEvent:event];
+        if(nil == hitTestView){
+          return view;
+        }
+      }
+    }
+    return self;
+ }
+```
+
+`- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event`判断点是否在当调用者的坐标系上，在返回YES；不在返回NO。
+
+### 响应链
+
+找到合适的view之后，就会调用响应者的3个touch相关的方法：touchesBegan、touchesMoved、touchesEnd。它们的默认实现就是把事件传递给上一层，如：
+
+```objective-c
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event{ 
+// 默认会把事件传递给上一个响应者,上一个响应者是父控件,交给父控件处理
+		[super touchesBegan:touches withEvent:event]; 
+// 注意不是调用父控件的touches方法，而是调用父类的touches方法
+}
+```
+
+> refer:
+>
+> [iOS 事件的产生、传递、响应](https://www.cnblogs.com/junhuawang/p/6133804.html)
+>
+> [UIResponder响应链](https://www.cnblogs.com/Xylophone/p/7148037.html)
 
 ## 80、frame和bounds有什么不同?
 
