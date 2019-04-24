@@ -2,6 +2,8 @@
 
 Some summaries of iOS knowledge points
 
+> 推荐使用Typora编辑或阅读，没有数字编号的标题表示已回答
+
 [TOC]
 
 > refer：https://www.jianshu.com/p/6b23e809e322
@@ -88,7 +90,20 @@ Some summaries of iOS knowledge points
 
 ## 5、UITableView & UICollection
 
-## 6、NSProxy & NSObject
+## NSProxy & NSObject
+
+iOS中绝大多数的类都继承自NSObject
+
+### 方法重定向
+
+NSProxy是一个虚类，继承它，重写下面两个方法可以将消息转发到另一个对象。
+
+```objective-c
+(void)forwardInvocation:(NSInvocation *)invocation;
+(nullable NSMethodSignature *)methodSignatureForSelector:(SEL)sel NS_SWIFT_UNAVAILABLE("NSInvocation and related APIs not available");
+```
+
+从`methodSignatureForSelector:`方法的签名可以看出，Swift不能使用这个利器了。
 
 ## 7、Object & Swift
 
@@ -548,13 +563,41 @@ UIApplication -> UIWindow(keyWindow) -> 寻找处理事件最合适的view(递�
 >
 > [UIResponder响应链](https://www.cnblogs.com/Xylophone/p/7148037.html)
 
-## 80、frame和bounds有什么不同?
+## frame和bounds有什么不同?
 
-## 81、方法和选择器有何不同?
+> 这个问题在我大三找实习面试的时候被问过，当时由于才开始学习iOS，所以没答上来，惭愧，惭愧。
 
-## 82、OC的垃圾回收机制?
+frame：自身在**父视图坐标系统**中的位置和大小。
 
-## 83、什么是延迟加载?
+bounds：自身在**本地坐标系统**中的位置和大小。
+
+frame和bounds共同决定了view在屏幕上的位置。
+
+bounds的设定会确定自身坐标系统的原点，若bounds=CGRect(0,0, 10, 10)，则本地坐标系统的原点为(0, 0)；若bounds=CGRect(-20,-20, 10,10)，则本地坐标系统的原点为(-20, -20)，这种情况下，只有当设置子视图的frame=(-20, -20, 1, 1)时，子视图才会和父视图的左上角重合。具体例子参考refer。
+
+> refer: [ios view的frame和bounds之区别（位置和大小）](https://blog.csdn.net/mad1989/article/details/8711697)
+
+## 方法和选择器有何不同?
+
+selector(选择器)是方法的名字，通过它可以找到方法的实现地址。
+
+方法属于对象，包含名字和实现。
+
+## OC的垃圾回收机制?
+
+[C]使用引用计数来管理内存。
+
+远古时代使用MRC(手动引用计数，现在可以在cocos-2dx的cpp代码中找到类MRC的实现)，手动来管理引用计数；
+
+WWDC 2011年后使用自动的引用计数（Automatic Reference Count 简称 ARC），由编译器在需要的地方插入MRC需要做的事情，一定程度上解放了程序员的双手。
+
+## 什么是延迟加载?
+
+延迟加载也成懒加载。不是立即需要的数据，不用在一开始就准备好，而是在需要的时候再去生成，降低初始化成本。
+
+在[C]中，一般是通过重写属性的getter方法来实现懒加载。
+
+Swift提供语言层面上的懒加载支持——lazy关键字。被lazy修饰的成员变量会在对象init的时候不会被初始化，直到它被调用。所有Collection也都有lazy Collection用于
 
 ## 84、是否在一个视图控制器中嵌入两个tableview控制器?
 
